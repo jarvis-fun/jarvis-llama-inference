@@ -1,0 +1,66 @@
+# -------------------------------------------------------------------------
+# Base Image: NVIDIA CUDA 11.8 on Ubuntu 22.04 (for GPU-enabled instances)
+# -------------------------------------------------------------------------
+FROM nvidia/cuda:11.8.0-devel-ubuntu22.04
+
+# -------------------------------------------------------------------------
+# Set environment variables for non-interactive installations
+# -------------------------------------------------------------------------
+ENV DEBIAN_FRONTEND=noninteractive
+
+# -------------------------------------------------------------------------
+# Install system packages
+# -------------------------------------------------------------------------
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 \
+    python3-pip \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Upgrade pip
+RUN pip3 install --upgrade pip
+
+# -------------------------------------------------------------------------
+# Install Python libraries for Llama inference
+#  - Specific torch version for CUDA 11.8
+#  - Transformers, Accelerate, bitsandbytes
+#  - Flask for serving
+# -------------------------------------------------------------------------
+RUN pip3 install \
+    torch==2.0.1+cu118 \
+    torchvision==0.15.2+cu118 \
+    torchaudio==2.0.2+cu118 \
+    --extra-index-url https://download.pytorch.org/whl/cu118
+
+RUN pip3 install \
+    transformers \
+    accelerate \
+    bitsandbytes \
+    python-dotenv \
+    flask
+
+# -------------------------------------------------------------------------
+# (Optional) Docker Labels for Jarvis metadata
+# -------------------------------------------------------------------------
+LABEL jarvis.project="true"
+LABEL jarvis.component="llama-inference"
+LABEL org.opencontainers.image.title="Jarvis Llama Inference"
+LABEL org.opencontainers.image.description="Docker-based Llama model for the Jarvis project"
+LABEL org.opencontainers.image.licenses="MIT"
+
+# -------------------------------------------------------------------------
+# Create a working directory and copy our app
+# Assumes you have app/app.py in the parent folder structure
+# -------------------------------------------------------------------------
+WORKDIR /app
+COPY ../app/app.py /app/
+
+# -------------------------------------------------------------------------
+# Expose port 8080 for the Flask server
+# -------------------------------------------------------------------------
+EXPOSE 8080
+
+# -------------------------------------------------------------------------
+# Default command: start the Flask server
+# -------------------------------------------------------------------------
+CMD ["python3", "app.py"]

@@ -1,0 +1,9 @@
+# requirements.txt
+
+# Example packages
+flask
+torch
+transformers
+accelerate
+python-dotenv
+bitsandbytes
